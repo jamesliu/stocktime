@@ -181,13 +181,7 @@ quick-start: install validate-config health-check run-example
 # Performance testing
 performance-test:
 	@echo "⚡ Running performance tests..."
-	python -c "
-import time
-from examples.component_example import main
-start = time.time()
-main()
-print(f'Performance test completed in {time.time() - start:.2f}s')
-	"
+	@python -c "import time; from examples.component_example import main; start = time.time(); main(); print(f'Performance test completed in {time.time() - start:.2f}s')"
 
 # System information
 system-info:
@@ -195,8 +189,8 @@ system-info:
 	@echo "Python Version: $$(python --version)"
 	@echo "Pip Version: $$(pip --version)"
 	@echo "Current Directory: $$(pwd)"
-	@echo "Available Memory: $$(python -c 'import psutil; print(f\"{psutil.virtual_memory().available / (1024**3):.1f} GB\")')"
-	@echo "GPU Available: $$(python -c 'import torch; print(torch.cuda.is_available())')"
+	@echo "Available Memory: $$(python -c 'import psutil; print(f\"{psutil.virtual_memory().available / (1024**3):.1f} GB\")' 2>/dev/null || echo 'N/A')"
+	@echo "GPU Available: $$(python -c 'import torch; print(torch.cuda.is_available())' 2>/dev/null || echo 'N/A')"
 
 # Installation verification
 verify-install:
