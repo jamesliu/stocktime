@@ -65,7 +65,7 @@ class StockTimeTradingSystem:
                 'max_drawdown': 0.05
             },
             'model_params': {
-                'llm_model_name': 'microsoft/DialoGPT-small',
+                'llm_model_name': 'microsoft/DialoGPT-small',  # Open access model
                 'patch_length': 4,
                 'hidden_dim': 256,
                 'num_lstm_layers': 2

@@ -29,6 +29,7 @@ help:
 	@echo ""
 	@echo "Trading Commands:"
 	@echo "  run-example      Run quick start example"
+	@echo "  test-2025-llm    Test optimal 2025 small LLM integration"
 	@echo "  run-evaluation   Run walk-forward evaluation only"
 	@echo "  run-live         Run live simulation only"
 	@echo "  run-full         Run complete trading system"
@@ -36,6 +37,8 @@ help:
 	@echo "Utility Commands:"
 	@echo "  clean            Clean up temporary files"
 	@echo "  docs             Generate documentation"
+	@echo "  gpu-info         Check GPU capabilities"
+	@echo "  compare-models   Compare different LLM models"
 	@echo ""
 	@echo "Examples:"
 	@echo "  make install"
@@ -129,6 +132,11 @@ run-component-example:
 	python examples/component_example.py
 	@echo "✅ Component example completed!"
 
+test-2025-llm:
+	@echo "🧪 Testing StockTime 2025 LLM integration..."
+	python test_2025_predictor.py
+	@echo "✅ 2025 LLM test completed!"
+
 run-evaluation:
 	@echo "📈 Running walk-forward evaluation..."
 	python -m stocktime.main.trading_system_runner --mode evaluate --output results/evaluation
@@ -190,14 +198,26 @@ performance-test:
 	@echo "⚡ Running performance tests..."
 	@python -c "import time; from examples.component_example import main; start = time.time(); main(); print(f'Performance test completed in {time.time() - start:.2f}s')"
 
+# Model comparison
+compare-models:
+	@echo "🧪 Comparing LLM models..."
+	python scripts/model_comparison.py
+	@echo "✅ Model comparison completed!"
+
 # System information
 system-info:
 	@echo "💻 System Information:"
-	@echo "Python Version: $$(python --version)"
-	@echo "Pip Version: $$(pip --version)"
-	@echo "Current Directory: $$(pwd)"
-	@echo "Available Memory: $$(python -c 'import psutil; print(f\"{psutil.virtual_memory().available / (1024**3):.1f} GB\")' 2>/dev/null || echo 'N/A')"
-	@echo "GPU Available: $$(python -c 'import torch; print(torch.cuda.is_available())' 2>/dev/null || echo 'N/A')"
+	@echo "Python Version: $(python --version)"
+	@echo "Pip Version: $(pip --version)"
+	@echo "Current Directory: $(pwd)"
+	@echo "Available Memory: $(python -c 'import psutil; print(f\"{psutil.virtual_memory().available / (1024**3):.1f} GB\")' 2>/dev/null || echo 'N/A')"
+	@echo "GPU Available: $(python -c 'import torch; print(torch.cuda.is_available())' 2>/dev/null || echo 'N/A')"
+
+# GPU information
+gpu-info:
+	@echo "🎮 Getting GPU information..."
+	python scripts/gpu_info.py
+	@echo "✅ GPU information completed!"
 
 # Installation verification
 verify-install:
@@ -230,6 +250,7 @@ setup: create-dirs install validate-config health-check
 help-trading:
 	@echo "📈 Trading Commands Help:"
 	@echo "  run-example      - Quick demonstration with synthetic data"
+	@echo "  test-2025-llm    - Test optimal 2025 small LLM integration"
 	@echo "  run-evaluation   - Rigorous walk-forward backtesting"
 	@echo "  run-live         - Live trading simulation"
 	@echo "  run-full         - Complete evaluation + live simulation"

@@ -34,10 +34,16 @@ risk_management:
   
 # Model architecture parameters
 model_params:
-  llm_model_name: 'microsoft/DialoGPT-small'  # Base LLM model
+  # 2025 Optimal Small LLM Choices (in priority order)
+  llm_model_name: 'Qwen/Qwen2.5-0.5B-Instruct'  # #1 Choice: Best balance of size/capability
+  llm_model_fallback: 'TinyLlama/TinyLlama-1.1B-Chat-v1.0'  # #2 Backup: Proven performance
+  llm_model_ultra_light: 'HuggingFaceTB/SmolLM2-360M-Instruct'  # #3 Edge: Ultra-lightweight
+  
   patch_length: 4           # Length of price patches
   hidden_dim: 256          # LSTM hidden dimension
   num_lstm_layers: 2       # Number of LSTM layers
+  max_context_length: 8192  # Leverage Qwen's extended context (128K available)
+  use_flash_attention: true # Enable efficient attention for long sequences
   
 # Evaluation parameters
 evaluation:

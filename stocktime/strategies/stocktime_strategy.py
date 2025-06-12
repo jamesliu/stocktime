@@ -193,6 +193,7 @@ class StockTimeStrategy:
         
         # Initialize StockTime predictor
         self.predictor = StockTimePredictor(
+            llm_model_name="microsoft/DialoGPT-small",  # Use open model
             lookback_window=lookback_window,
             patch_length=4
         )

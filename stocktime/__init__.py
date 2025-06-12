@@ -15,6 +15,7 @@ __version__ = "1.0.0"
 __author__ = "StockTime Team"
 
 from .core.stocktime_predictor import StockTimePredictor
+from .core.stocktime_predictor_2025 import StockTimePredictor2025
 from .strategies.stocktime_strategy import StockTimeStrategy
 from .execution.portfolio_manager import PortfolioManager
 from .evaluation.walk_forward_evaluator import WalkForwardEvaluator
@@ -22,6 +23,7 @@ from .main.trading_system_runner import StockTimeTradingSystem
 
 __all__ = [
     'StockTimePredictor',
+    'StockTimePredictor2025',
     'StockTimeStrategy', 
     'PortfolioManager',
     'WalkForwardEvaluator',
