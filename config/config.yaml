@@ -1,0 +1,76 @@
+# stocktime/config/config.yaml
+# StockTime Trading System Configuration
+
+# Trading universe
+symbols:
+  - 'AAPL'    # Apple Inc.
+  - 'MSFT'    # Microsoft Corporation
+  - 'GOOGL'   # Alphabet Inc.
+  - 'TSLA'    # Tesla Inc.
+  - 'AMZN'    # Amazon.com Inc.
+  - 'NVDA'    # NVIDIA Corporation
+  - 'META'    # Meta Platforms Inc.
+  - 'BRK-B'   # Berkshire Hathaway Inc.
+
+# Capital allocation
+initial_capital: 100000  # Starting capital in USD
+max_positions: 8         # Maximum concurrent positions
+position_size_limit: 0.12  # Maximum 12% per position
+
+# StockTime model parameters
+lookback_window: 32      # Historical data window for predictions
+prediction_horizon: 5    # Number of periods to predict ahead
+retraining_frequency: 63 # Retrain model every 63 days (quarterly)
+
+# Execution parameters
+commission_rate: 0.001   # 0.1% commission per trade
+slippage_rate: 0.0005   # 0.05% slippage
+
+# Risk management
+risk_management:
+  daily_loss_limit: 0.02    # 2% maximum daily loss
+  total_loss_limit: 0.15    # 15% maximum total loss
+  max_drawdown: 0.05        # 5% maximum drawdown threshold
+  
+# Model architecture parameters
+model_params:
+  llm_model_name: 'microsoft/DialoGPT-small'  # Base LLM model
+  patch_length: 4           # Length of price patches
+  hidden_dim: 256          # LSTM hidden dimension
+  num_lstm_layers: 2       # Number of LSTM layers
+  
+# Evaluation parameters
+evaluation:
+  training_window: 252     # 1 year training window
+  out_of_sample_window: 21 # 1 month out-of-sample testing
+  min_training_samples: 100 # Minimum samples for training
+  
+# Specialist role configurations
+specialists:
+  question_architect:
+    research_horizon: 'quarterly'
+    focus_areas: ['volatility', 'correlation', 'momentum']
+    
+  llm_specialist:
+    confidence_threshold: 0.6
+    ensemble_methods: false
+    
+  risk_management:
+    position_sizing_method: 'kelly_criterion'
+    volatility_adjustment: true
+    
+  goal_specialist:
+    target_sharpe: 2.0
+    target_annual_return: 0.15
+    performance_review_frequency: 'monthly'
+
+# Logging and output
+logging:
+  level: 'INFO'
+  file: 'stocktime_trading.log'
+  
+output:
+  save_trades: true
+  save_portfolio_states: true
+  generate_reports: true
+  plot_performance: true

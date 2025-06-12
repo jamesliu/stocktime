@@ -1,0 +1,80 @@
+MIT License
+
+Copyright (c) 2024 StockTime Trading System
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+===============================================================================
+
+DISCLAIMER AND WARNING
+
+INVESTMENT DISCLAIMER: This software is provided for educational and research 
+purposes only. It is NOT intended to provide financial advice or recommendations 
+for actual trading or investment decisions.
+
+RISK WARNING: Trading and investing in financial markets involves substantial 
+risk of loss. Past performance of any trading strategy does not guarantee future 
+results. You may lose some or all of your invested capital.
+
+NO FINANCIAL ADVICE: The creators and contributors of this software are not 
+licensed financial advisors, brokers, or investment professionals. This software 
+should not be construed as financial advice.
+
+VALIDATION REQUIREMENT: This system includes a mandatory walk-forward evaluation 
+that requires any trading strategy to outperform a buy-and-hold benchmark. 
+Strategies that fail this validation should NOT be used for actual trading.
+
+USER RESPONSIBILITY: Users are solely responsible for:
+- Their own investment decisions
+- Compliance with applicable laws and regulations
+- Understanding the risks involved
+- Consulting with qualified financial professionals
+
+USE AT YOUR OWN RISK: By using this software, you acknowledge and accept full 
+responsibility for any financial losses that may result from your use of this 
+software.
+
+===============================================================================
+
+RESEARCH ATTRIBUTION
+
+This software implements concepts from the research paper:
+"StockTime: A Time Series Specialized Large Language Model Architecture 
+for Stock Price Prediction" by Wang et al.
+
+The implementation is an independent interpretation of the research and is not 
+affiliated with the original authors.
+
+===============================================================================
+
+THIRD-PARTY LICENSES
+
+This software may include third-party libraries and dependencies, each subject 
+to their own license terms. Please refer to the individual library documentation 
+and license files for complete licensing information.
+
+Key dependencies include:
+- PyTorch (BSD License)
+- Transformers (Apache 2.0 License)
+- NumPy (BSD License)
+- Pandas (BSD License)
+- Scikit-learn (BSD License)
+- Matplotlib (PSF License)
+
+===============================================================================

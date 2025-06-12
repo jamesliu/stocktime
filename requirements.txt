@@ -1,0 +1,74 @@
+# requirements.txt
+# StockTime Trading System Dependencies
+
+# Core ML and DL libraries
+torch>=1.12.0
+transformers>=4.20.0
+numpy>=1.21.0
+pandas>=1.4.0
+scikit-learn>=1.1.0
+
+# Financial data and analysis
+yfinance>=0.1.70
+ta-lib>=0.4.24
+quantlib>=1.28
+
+# Visualization
+matplotlib>=3.5.0
+seaborn>=0.11.0
+plotly>=5.10.0
+
+# Data processing
+scipy>=1.8.0
+statsmodels>=0.13.0
+
+# Configuration and utilities
+pyyaml>=6.0
+python-dateutil>=2.8.0
+tqdm>=4.64.0
+
+# Logging and monitoring
+loguru>=0.6.0
+
+# API and web frameworks (for potential web interface)
+flask>=2.2.0
+requests>=2.28.0
+
+# Development and testing
+pytest>=7.0.0
+pytest-cov>=3.0.0
+black>=22.0.0
+flake8>=4.0.0
+
+# Optional: GPU acceleration
+# torch-audio>=0.12.0  # Uncomment if using audio features
+# torch-vision>=0.13.0  # Uncomment if using visual features
+
+# Documentation
+sphinx>=5.0.0
+sphinx-rtd-theme>=1.0.0
+
+# Jupyter notebook support (for analysis)
+jupyter>=1.0.0
+ipykernel>=6.15.0
+
+# Memory optimization
+psutil>=5.9.0
+
+# Parallel processing
+joblib>=1.1.0
+
+# Time series specific libraries
+arch>=5.3.0  # For GARCH models
+pmdarima>=2.0.0  # For ARIMA models
+
+# Database support (optional)
+sqlalchemy>=1.4.0
+sqlite3  # Built-in Python
+
+# Cloud storage support (optional)
+boto3>=1.24.0  # For AWS S3
+google-cloud-storage>=2.5.0  # For Google Cloud Storage
+
+# Monitoring and alerts (optional)
+slack-sdk>=3.18.0  # For Slack notifications
