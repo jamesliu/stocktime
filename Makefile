@@ -1,7 +1,7 @@
 # Makefile for StockTime Trading System
 # Provides convenient commands for development and deployment
 
-.PHONY: help install test clean lint format docs health-check validate-config download-data run-example run-evaluation run-live setup-dev
+.PHONY: help install install-full test clean lint format docs health-check validate-config download-data run-example run-evaluation run-live setup-dev
 
 # Default target
 help:
@@ -9,7 +9,8 @@ help:
 	@echo "=================================================="
 	@echo ""
 	@echo "Setup Commands:"
-	@echo "  install          Install package and dependencies"
+	@echo "  install          Install package with minimal dependencies"
+	@echo "  install-full     Install package with all dependencies"
 	@echo "  setup-dev        Setup development environment"
 	@echo ""
 	@echo "Testing Commands:"
@@ -44,10 +45,16 @@ help:
 
 # Installation and setup
 install:
-	@echo "📦 Installing StockTime and dependencies..."
-	pip install -r requirements.txt
+	@echo "📦 Installing StockTime with minimal dependencies..."
+	pip install -r requirements-minimal.txt
 	pip install -e .
 	@echo "✅ Installation completed!"
+
+install-full:
+	@echo "📦 Installing StockTime with all dependencies..."
+	pip install -r requirements.txt
+	pip install -e .
+	@echo "✅ Full installation completed!"
 
 setup-dev:
 	@echo "🛠️ Setting up development environment..."
