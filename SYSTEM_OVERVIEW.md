@@ -8,6 +8,7 @@ The **StockTime Trading System** is a complete implementation of the research pa
 - **Specialist role-based trading strategy** following professional trading team structure  
 - **Rigorous walk-forward validation** with mandatory buy-and-hold outperformance
 - **Professional-grade risk management** and portfolio execution
+- **Live trading bot** with automated execution and real-time market analysis
 - **Comprehensive performance evaluation** and reporting
 
 ## 📁 Complete File Structure
@@ -15,6 +16,7 @@ The **StockTime Trading System** is a complete implementation of the research pa
 ```
 stocktime/
 ├── 📄 README.md                          # Main documentation and setup guide
+├── 📄 LIVE_TRADING.md                   # Live trading bot documentation
 ├── 📄 LICENSE                           # MIT License with trading disclaimers
 ├── 📄 CHANGELOG.md                      # Version history and release notes
 ├── 📄 CONTRIBUTING.md                   # Contributor guidelines and standards
@@ -23,6 +25,7 @@ stocktime/
 ├── 📄 Makefile                         # Development and deployment commands
 ├── 📄 .gitignore                       # Git ignore patterns
 ├── 📄 run_stocktime.py                 # Main entry point script
+├── 📄 run_trading_bot.py               # Live trading bot runner script
 │
 ├── 📁 stocktime/                       # Main package directory
 │   ├── 📄 __init__.py                  # Package initialization
@@ -37,7 +40,8 @@ stocktime/
 │   │
 │   ├── 📁 execution/                    # Portfolio management and execution
 │   │   ├── 📄 __init__.py
-│   │   └── 📄 portfolio_manager.py     # Portfolio management system
+│   │   ├── 📄 portfolio_manager.py     # Portfolio management system
+│   │   └── 📄 live_trading_engine.py   # Live trading bot implementation
 │   │
 │   ├── 📁 evaluation/                   # Backtesting and evaluation
 │   │   ├── 📄 __init__.py
@@ -48,7 +52,8 @@ stocktime/
 │       └── 📄 trading_system_runner.py # Complete system integration
 │
 ├── 📁 config/                          # Configuration files
-│   └── 📄 config.yaml                  # Main system configuration
+│   ├── 📄 config.yaml                  # Main system configuration
+│   └── 📄 live_trading_config.yaml     # Live trading bot configuration
 │
 ├── 📁 examples/                        # Usage examples
 │   ├── 📄 quick_start.py               # Quick start demonstration
@@ -101,6 +106,17 @@ stocktime/
 - **Statistical Testing**: Significance testing for strategy performance
 - **Comprehensive Metrics**: Sharpe ratio, drawdown analysis, win rate, etc.
 - **Performance Reporting**: Detailed evaluation reports with visualizations
+
+### 5. Live Trading Engine (`stocktime/execution/live_trading_engine.py`)
+**⚠️ Only used AFTER successful walk-forward validation**
+- **Automated Trading Bot**: Continuous operation during market hours
+- **Real-Time Data Integration**: Live market data feeds (Yahoo Finance, broker APIs)
+- **Broker Integration**: Support for multiple broker APIs (Alpaca, Interactive Brokers)
+- **Paper Trading**: Safe testing environment with simulated executions
+- **Risk Management**: Position limits, loss limits, emergency stops
+- **Scheduled Execution**: Configurable trading intervals (30 minutes default)
+- **Market Hours Awareness**: Automatic pause outside trading hours
+- **Comprehensive Logging**: Detailed decision tracking and performance monitoring
 
 ## ⚙️ Configuration System
 

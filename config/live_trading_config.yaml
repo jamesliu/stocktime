@@ -1,0 +1,50 @@
+# Live Trading Bot Configuration
+
+# Trading universe
+symbols:
+  - 'AAPL'
+  - 'MSFT' 
+  - 'GOOGL'
+  - 'TSLA'
+  - 'NVDA'
+
+# Capital management
+initial_capital: 10000  # Start with smaller amount for live trading
+position_size_limit: 0.15  # Max 15% per position
+max_positions: 3  # Conservative for live trading
+
+# StockTime parameters
+lookback_window: 32  # 32 × 30-minute bars = 16 hours
+prediction_horizon: 5
+confidence_threshold: 0.65  # Higher threshold for live trading
+
+# Trading schedule
+trading_interval: 1800  # 30 minutes (1800 seconds)
+market_hours:
+  start: '09:30'
+  end: '16:00'
+  timezone: 'US/Eastern'
+
+# Risk management (stricter for live trading)
+risk_management:
+  daily_loss_limit: 0.015  # 1.5% daily loss limit
+  total_loss_limit: 0.10   # 10% total loss limit
+  position_timeout: 3600   # Close positions after 1 hour if no profit
+
+# Model parameters
+model_params:
+  llm_model_name: 'Qwen/Qwen2.5-0.5B-Instruct'
+  patch_length: 4
+  hidden_dim: 256
+  num_lstm_layers: 2
+
+# Execution parameters
+commission_rate: 0.001  # 0.1%
+slippage_rate: 0.0005   # 0.05%
+
+# Logging
+logging:
+  level: 'INFO'
+  file: 'stocktime_live_bot.log'
+  save_trades: true
+  save_performance: true

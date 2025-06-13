@@ -217,6 +217,69 @@ evaluator = WalkForwardEvaluator(
 results = evaluator.run_walk_forward_analysis(market_data, symbols)
 ```
 
+## 🤖 Live Trading Bot
+
+**⚠️ Important: Start with paper trading before using real money!**
+
+StockTime includes a fully automated live trading bot that runs continuously during market hours, making AI-powered trading decisions every 30 minutes.
+
+### Quick Start - Paper Trading
+
+```bash
+# Start paper trading (safe for testing)
+python run_trading_bot.py --paper-trading
+
+# Monitor only mode (no trades executed)
+python run_trading_bot.py --monitoring-only
+
+# Custom configuration
+python run_trading_bot.py --config config/live_trading_config.yaml
+```
+
+### Live Trading Features
+
+- **🕐 Automated Trading**: Runs every 30 minutes during market hours
+- **📊 Real-time Analysis**: Live market data with StockTime AI predictions
+- **🛡️ Risk Management**: Position limits, loss limits, emergency stops
+- **📈 Paper Trading**: Risk-free testing with simulated money
+- **🔌 Broker Integration**: Supports multiple broker APIs
+- **📱 Monitoring**: Detailed logging and performance tracking
+
+### Example Trading Decision
+
+```
+📊 StockTime Live Analysis - AAPL
+Time: 2024-01-15 14:30:00 ET
+Current Price: $185.50
+
+Historical Data: 32 × 30-minute bars (16 hours lookback)
+LLM Analysis: "minimum $184.20, maximum $186.45, change rate +0.68%"
+
+AI Predictions (next 5 × 30-min periods):
+├── 15:00: $186.20 (+0.38%)
+├── 15:30: $186.85 (+0.75%)
+└── 16:00: $186.40 (+0.49%)
+
+Decision: BUY ✅
+├── Confidence: 73%
+├── Position Size: $1,500 (15% of portfolio)
+├── Quantity: 8.1 shares
+└── Risk: Stop loss at $180.14 (-2.9%)
+```
+
+### Safety Features
+
+- **Paper Trading First**: Always test with simulated money
+- **Position Limits**: Maximum 15% per position
+- **Loss Limits**: 1.5% daily, 10% total loss limits
+- **Market Hours**: Only trades Monday-Friday, 9:30 AM - 4:00 PM ET
+- **Confidence Threshold**: Minimum 65% AI confidence required
+
+### 📖 Detailed Documentation
+
+See [LIVE_TRADING.md](LIVE_TRADING.md) for complete setup instructions, broker integrations, and advanced configuration.
+
+
 ## ⚙️ Configuration
 
 The system uses YAML configuration files for easy customization:
