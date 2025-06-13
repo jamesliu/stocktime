@@ -94,7 +94,6 @@ class StockTimeTradingSystem:
             # Generate synthetic data for demonstration
             self.logger.info("Generating synthetic market data for testing")
             self.market_data = self._generate_synthetic_data(start_date, end_date)
-        
         return self.market_data
     
     def _generate_synthetic_data(self, start_date: str, end_date: str) -> Dict[str, pd.DataFrame]:
@@ -103,7 +102,6 @@ class StockTimeTradingSystem:
         """
         dates = pd.date_range(start_date, end_date, freq='D')
         market_data = {}
-        
         # Market-wide factors
         np.random.seed(42)
         market_returns = np.random.randn(len(dates)) * 0.008 + 0.0003  # Market drift
@@ -140,15 +138,13 @@ class StockTimeTradingSystem:
             base_volume = 1000000 + np.random.randint(0, 5000000)
             volume_factor = 1 + 2 * np.abs(stock_returns) / stock_vol  # Higher volume on big moves
             volumes = (base_volume * volume_factor).astype(int)
-            
             market_data[symbol] = pd.DataFrame({
                 'open': open_prices,
                 'high': np.maximum(high_prices, np.maximum(open_prices, prices)),
                 'low': np.minimum(low_prices, np.minimum(open_prices, prices)),
                 'close': prices,
-                'volume': volumes
-            }, index=dates)
-            
+                'volume': volumes})
+            market_data[symbol].index = dates  # this works fine since lengths match
             # Ensure OHLC consistency
             market_data[symbol]['high'] = market_data[symbol][['open', 'high', 'low', 'close']].max(axis=1)
             market_data[symbol]['low'] = market_data[symbol][['open', 'high', 'low', 'close']].min(axis=1)
