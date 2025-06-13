@@ -44,17 +44,21 @@ class YahooFinanceProvider(LiveDataProvider):
     def get_historical_data(self, symbol: str, periods: int, interval: str = "30m") -> pd.DataFrame:
         """Get historical data for StockTime analysis"""
         try:
-            # Map intervals
-            interval_map = {"30m": "30m", "1h": "1h", "1d": "1d"}
-            yf_interval = interval_map.get(interval, "30m")
-            
-            # Calculate period string for yfinance
+            # Use valid Yahoo Finance periods and fetch more data than needed
             if interval == "30m":
-                period_str = f"{periods * 30}m" if periods * 30 < 1440 else "5d"
+                # Need 32 × 30-min bars = 16 hours
+                # Use 5d to ensure we get enough data, then take last N periods
+                period_str = "5d"
+                yf_interval = "30m"
             elif interval == "1h":
-                period_str = f"{periods}h" if periods < 24 else "10d"
+                # Need periods × 1h bars  
+                # Use 1mo to get enough hourly data
+                period_str = "1mo" 
+                yf_interval = "1h"
             else:
-                period_str = f"{periods}d"
+                # Daily data
+                period_str = "1y"
+                yf_interval = "1d"
             
             ticker = yf.Ticker(symbol)
             data = ticker.history(period=period_str, interval=yf_interval)
@@ -68,6 +72,7 @@ class YahooFinanceProvider(LiveDataProvider):
                     'Close': 'close',
                     'Volume': 'volume'
                 })
+                # Take the last N periods we actually need
                 return data[['open', 'high', 'low', 'close', 'volume']].tail(periods)
             
         except Exception as e:
