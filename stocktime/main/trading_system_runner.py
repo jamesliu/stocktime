@@ -71,7 +71,6 @@ class StockTimeTradingSystem:
                 'num_lstm_layers': 2
             }
         }
-        
         if config_path and os.path.exists(config_path):
             with open(config_path, 'r') as f:
                 user_config = yaml.safe_load(f)
@@ -223,7 +222,7 @@ class StockTimeTradingSystem:
     
     def run_live_simulation(self, start_date: str = None, end_date: str = None):
         """
-        Run live trading simulation
+        Run live trading simulation with detailed progress tracking
         """
         if not start_date:
             # Use last 6 months of data for live simulation
@@ -234,10 +233,29 @@ class StockTimeTradingSystem:
         self.logger.info(f"Starting live simulation from {start_date} to {end_date}")
         
         simulation_dates = pd.date_range(start_date, end_date, freq='D')
+        total_days = len(simulation_dates)
         
-        for date in simulation_dates:
+        print(f"\n🎯 LIVE SIMULATION PROGRESS")
+        print(f"📅 Simulating {total_days} trading days")
+        print(f"📊 Processing {len(self.config['symbols'])} symbols")
+        print(f"🧠 Using LLM ({self.config['model_params']['llm_model_name']}) predictions for trading decisions")
+        print("-" * 60)
+        
+        signals_generated_total = 0
+        trades_executed_total = 0
+        
+        for i, date in enumerate(simulation_dates):
+            # Progress indicator
+            if i % 10 == 0 or i < 5:  # Show progress every 10 days, plus first 5 days
+                progress = (i / total_days) * 100
+                print(f"\n📈 Day {i+1}/{total_days} ({progress:.1f}%) - {date.strftime('%Y-%m-%d')}")
+            
             # Update portfolio state
             portfolio_state = self.portfolio_manager.update_portfolio_state(date)
+            
+            # Show portfolio status periodically
+            if i % 10 == 0 or i < 5:
+                print(f"   💼 Portfolio: ${portfolio_state.total_value:,.2f} | Cash: ${portfolio_state.cash:,.2f} | Positions: {len(portfolio_state.positions)}")
             
             # Generate signals (daily in live mode, but could be adjusted)
             current_data = {}
@@ -249,15 +267,53 @@ class StockTimeTradingSystem:
                         current_data[symbol] = symbol_data[mask]
             
             if current_data:
-                signals = self.strategy.generate_signals(current_data)
-                executed_trades = self.portfolio_manager.process_signals(signals)
+                print(f"   🧠 Generating LLM predictions for {len(current_data)} symbols...", end="")
                 
-                if executed_trades:
-                    self.logger.info(f"{date.date()}: Executed {len(executed_trades)} trades, "
-                                   f"Portfolio: ${portfolio_state.total_value:.2f}")
+                try:
+                    # Generate signals with timing
+                    import time
+                    start_time = time.time()
+                    signals = self.strategy.generate_signals(current_data)
+                    prediction_time = time.time() - start_time
+                    
+                    print(f" ✅ Done ({prediction_time:.2f}s)")
+                    
+                    if signals:
+                        print(f"   📡 Generated {len(signals)} trading signals:")
+                        for signal in signals:
+                            print(f"      • {signal.action} {signal.symbol} @ ${signal.current_price:.2f} (confidence: {signal.confidence:.2f})")
+                    
+                    signals_generated_total += len(signals)
+                    
+                    # Execute trades
+                    executed_trades = self.portfolio_manager.process_signals(signals)
+                    trades_executed_total += len(executed_trades)
+                    
+                    if executed_trades:
+                        print(f"   💰 Executed {len(executed_trades)} trades:")
+                        for trade in executed_trades:
+                            print(f"      ✓ {trade.action} {trade.quantity:.1f} {trade.symbol} @ ${trade.price:.2f}")
+                        
+                        self.logger.info(f"{date.date()}: Executed {len(executed_trades)} trades, "
+                                       f"Portfolio: ${portfolio_state.total_value:.2f}")
+                    elif signals:
+                        print(f"   ⏸️  No trades executed (risk management or position limits)")
+                
+                except Exception as e:
+                    print(f" ❌ Error: {e}")
+                    self.logger.error(f"Signal generation failed on {date}: {e}")
+            
+            # Show major milestones
+            if i > 0 and i % 25 == 0:
+                current_return = (portfolio_state.total_value - self.config['initial_capital']) / self.config['initial_capital']
+                print(f"\n🎯 MILESTONE - Day {i}: Return {current_return:.2%}, Signals: {signals_generated_total}, Trades: {trades_executed_total}")
         
         # Final performance summary
         self.live_performance = self.portfolio_manager.get_performance_summary()
+        
+        print(f"\n✅ Live simulation completed!")
+        print(f"📊 Total signals generated: {signals_generated_total}")
+        print(f"💰 Total trades executed: {trades_executed_total}")
         
         self.logger.info("Live simulation completed")
         self._print_live_performance_summary()
