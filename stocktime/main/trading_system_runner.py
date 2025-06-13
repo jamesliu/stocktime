@@ -79,8 +79,8 @@ class StockTimeTradingSystem:
         
         return default_config
     
-    def load_market_data(self, data_path: str = None, start_date: str = '2020-01-01', 
-                        end_date: str = '2024-01-01') -> Dict[str, pd.DataFrame]:
+    def load_market_data(self, data_path: str = None, start_date: str = '2024-01-01', 
+                        end_date: str = '2025-5-31') -> Dict[str, pd.DataFrame]:
         """
         Load or generate market data for backtesting
         In production, this would connect to real data sources
