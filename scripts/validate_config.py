@@ -192,17 +192,26 @@ def check_dependencies() -> List[str]:
     """Check if required dependencies are installed"""
     issues = []
     
-    required_packages = [
-        'torch', 'transformers', 'numpy', 'pandas', 'scikit-learn',
-        'matplotlib', 'seaborn', 'scipy', 'yaml', 'tqdm'
-    ]
+    # Map package names to their import names (some differ)
+    required_packages = {
+        'torch': 'torch',
+        'transformers': 'transformers', 
+        'numpy': 'numpy',
+        'pandas': 'pandas',
+        'scikit-learn': 'sklearn',  # Package name vs import name
+        'matplotlib': 'matplotlib',
+        'seaborn': 'seaborn',
+        'scipy': 'scipy',
+        'pyyaml': 'yaml',  # Package name vs import name
+        'tqdm': 'tqdm'
+    }
     
     missing_packages = []
-    for package in required_packages:
+    for package_name, import_name in required_packages.items():
         try:
-            __import__(package)
+            __import__(import_name)
         except ImportError:
-            missing_packages.append(package)
+            missing_packages.append(package_name)
     
     if missing_packages:
         issues.append(f"Missing required packages: {missing_packages}")
