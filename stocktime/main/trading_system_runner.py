@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 import argparse
 import yaml
 import os
@@ -79,16 +79,37 @@ class StockTimeTradingSystem:
         return default_config
     
     def load_market_data(self, data_path: str = None, start_date: str = '2024-01-01', 
-                        end_date: str = '2025-5-31') -> Dict[str, pd.DataFrame]:
+                        end_date: str = '2025-5-31', timeframe: str = None) -> Dict[str, pd.DataFrame]:
         """
         Load or generate market data for backtesting
-        In production, this would connect to real data sources
+        Supports real 30m, 1h, 1d data or synthetic data
         """
         if data_path and os.path.exists(data_path):
-            # Load real data from file
-            self.logger.info(f"Loading market data from {data_path}")
-            # Implementation would depend on data format
-            pass
+            # Load real data from directory
+            self.logger.info(f"Loading real market data from {data_path}")
+            from stocktime.data.real_data_loader import RealMarketDataLoader
+            
+            # Detect timeframe from config or parameter
+            detected_timeframe = timeframe or self.config.get('timeframe', '1d')
+            
+            loader = RealMarketDataLoader(
+                data_directory=data_path,
+                timeframe=detected_timeframe
+            )
+            
+            # Load data for configured symbols
+            symbols = self.config.get('symbols', loader.discover_symbols()[:5])
+            self.market_data = loader.load_multiple_symbols(
+                symbols=symbols,
+                start_date=start_date,
+                end_date=end_date,
+                min_data_points=100
+            )
+            
+            # Export in StockTime format
+            self.market_data = loader.export_for_stocktime()
+            
+            self.logger.info(f"✅ Loaded real {detected_timeframe} data for {len(self.market_data)} symbols")
         else:
             # Generate synthetic data for demonstration
             self.logger.info("Generating synthetic market data for testing")
@@ -179,14 +200,34 @@ class StockTimeTradingSystem:
         self.portfolio_manager.daily_loss_limit = self.config['risk_management']['daily_loss_limit']
         self.portfolio_manager.total_loss_limit = self.config['risk_management']['total_loss_limit']
         
-        # Initialize walk-forward evaluator
+        # Initialize walk-forward evaluator with timeframe-appropriate windows
+        timeframe = self.config.get('timeframe', '1d')
+        training_window, oos_window = self._calculate_evaluation_windows(timeframe)
+        
         self.evaluator = WalkForwardEvaluator(
-            training_window=252,  # 1 year
+            training_window=training_window,
             retraining_frequency=self.config['retraining_frequency'],
-            out_of_sample_window=21  # 1 month
+            out_of_sample_window=oos_window
         )
         
         self.logger.info("All system components initialized successfully")
+    
+    def _calculate_evaluation_windows(self, timeframe: str) -> Tuple[int, int]:
+        """Calculate appropriate training and out-of-sample windows for timeframe"""
+        if timeframe == '30m':
+            # 30-minute data: 13 periods/day × 30 days = 390 periods training
+            # 13 periods/day × 5 days = 65 periods OOS (1 week)
+            return 390, 65
+        elif timeframe == '1h':
+            # Hourly data: 6.5 periods/day × 30 days = 195 periods training
+            # 6.5 periods/day × 5 days = 32 periods OOS (1 week)
+            return 195, 32
+        elif timeframe == '1d':
+            # Daily data: 252 periods ≈ 1 year training, 21 periods ≈ 1 month OOS
+            return 252, 21
+        else:
+            # Default to daily
+            return 252, 21
     
     def run_walk_forward_evaluation(self) -> WalkForwardResult:
         """
@@ -452,7 +493,9 @@ def main():
     """
     parser = argparse.ArgumentParser(description='StockTime Trading System')
     parser.add_argument('--config', type=str, help='Path to configuration file')
-    parser.add_argument('--data', type=str, help='Path to market data')
+    parser.add_argument('--data', type=str, help='Path to market data directory')
+    parser.add_argument('--timeframe', type=str, choices=['30m', '1h', '1d'], default='1d',
+                       help='Data timeframe: 30m, 1h, or 1d')
     parser.add_argument('--mode', choices=['evaluate', 'live', 'both'], default='both',
                        help='Running mode: evaluate, live, or both')
     parser.add_argument('--output', type=str, default='results', help='Output directory')
@@ -462,8 +505,11 @@ def main():
     # Initialize trading system
     system = StockTimeTradingSystem(config_path=args.config)
     
+    # Set timeframe in config
+    system.config['timeframe'] = args.timeframe
+    
     # Load market data
-    system.load_market_data(data_path=args.data)
+    system.load_market_data(data_path=args.data, timeframe=args.timeframe)
     
     # Initialize components
     system.initialize_components()

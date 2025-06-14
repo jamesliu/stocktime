@@ -299,11 +299,11 @@ class RealDataStockTimeTradingSystem:
         timeframe = self.config.get('real_data', {}).get('timeframe', '1d')
         
         if timeframe == '30m':
-            # 30-minute data: ~2 weeks of trading days = 336 intervals
-            return 336
+            # 30-minute data: 13 periods/day × 30 days = 390 periods
+            return 390
         elif timeframe == '1h':
-            # Hourly data: ~1 month of trading days = 168 intervals  
-            return 168
+            # Hourly data: 6.5 periods/day × 30 days = 195 periods
+            return 195
         elif timeframe == '1d':
             # Daily data: ~1 year = 252 trading days
             return 252
@@ -316,11 +316,11 @@ class RealDataStockTimeTradingSystem:
         timeframe = self.config.get('real_data', {}).get('timeframe', '1d')
         
         if timeframe == '30m':
-            # 30-minute data: ~3 days = 48 intervals
-            return 48
+            # 30-minute data: 13 periods/day × 5 days = 65 periods (1 week)
+            return 65
         elif timeframe == '1h':
-            # Hourly data: ~1 week = 40 intervals
-            return 40
+            # Hourly data: 6.5 periods/day × 5 days = 32 periods (1 week)
+            return 32
         elif timeframe == '1d':
             # Daily data: ~1 month = 21 trading days
             return 21
