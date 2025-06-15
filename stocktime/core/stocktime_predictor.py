@@ -123,6 +123,10 @@ class StockTimePredictor(nn.Module):
             max_length=512
         )
         
+        # Move tokenized inputs to same device as model
+        device = next(self.llm.parameters()).device
+        tokenized = {k: v.to(device) for k, v in tokenized.items()}
+        
         # Get textual embeddings from frozen LLM
         with torch.no_grad():
             textual_outputs = self.llm(**tokenized)
@@ -153,7 +157,9 @@ class StockTimePredictor(nn.Module):
         self.eval()
         
         with torch.no_grad():
-            price_tensor = torch.FloatTensor(price_history).unsqueeze(0)
+            # Get the device of the model
+            device = next(self.parameters()).device
+            price_tensor = torch.FloatTensor(price_history).unsqueeze(0).to(device)
             predictions = self.forward(price_tensor, timestamps)
             
             # Get the last prediction for next steps

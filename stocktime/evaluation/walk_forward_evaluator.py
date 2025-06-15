@@ -10,6 +10,8 @@ import logging
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy import stats
+import os
+import json
 
 from stocktime.strategies.stocktime_strategy import StockTimeStrategy, TradingSignal
 from stocktime.core.stocktime_predictor import StockTimePredictor
@@ -54,18 +56,36 @@ class WalkForwardEvaluator:
                  training_window: int = 252,  # 1 year
                  retraining_frequency: int = 63,  # Quarterly
                  out_of_sample_window: int = 21,  # 1 month
-                 min_training_samples: int = 100):
+                 min_training_samples: int = 100,
+                 save_models: bool = True,
+                 model_save_dir: str = "models/walk_forward",
+                 use_gpu: bool = True):
         
         self.training_window = training_window
         self.retraining_frequency = retraining_frequency
         self.out_of_sample_window = out_of_sample_window
         self.min_training_samples = min_training_samples
+        self.save_models = save_models
+        self.model_save_dir = model_save_dir
+        self.use_gpu = use_gpu
+        
+        # GPU setup
+        self.device = torch.device('cuda' if use_gpu and torch.cuda.is_available() else 'cpu')
+        if self.device.type == 'cuda':
+            logging.info(f"🚀 GPU acceleration enabled: {torch.cuda.get_device_name()}")
+            logging.info(f"   GPU memory: {torch.cuda.get_device_properties(0).total_memory / 1024**3:.1f} GB")
+        else:
+            logging.info("💻 Using CPU for training")
         
         # Performance tracking
         self.strategy_returns = []
         self.benchmark_returns = []
         self.signals_history = []
         self.trades_history = []
+        
+        # Model tracking
+        self.current_period = 0
+        self.training_metadata = {}
         
     def calculate_performance_metrics(self, 
                                     returns: pd.Series, 
@@ -155,11 +175,25 @@ class WalkForwardEvaluator:
         out_of_sample_periods = 0
         training_periods = 0
         
+        # Calculate total periods for progress display
+        total_periods = 0
+        temp_idx = self.training_window
+        while temp_idx + self.out_of_sample_window < len(all_dates):
+            temp_idx += self.retraining_frequency
+            total_periods += 1
+        
+        logging.info(f"📊 Walk-forward analysis: {total_periods} periods to evaluate")
+        logging.info(f"   Training window: {self.training_window} periods")
+        logging.info(f"   Out-of-sample window: {self.out_of_sample_window} periods")
+        logging.info(f"   Retraining frequency: {self.retraining_frequency} periods")
+        
         # Walk-forward loop
         start_idx = self.training_window
         current_idx = start_idx
+        period_counter = 0
         
         while current_idx + self.out_of_sample_window < len(all_dates):
+            period_counter += 1
             # Define training and testing periods
             train_start = max(0, current_idx - self.training_window)
             train_end = current_idx
@@ -190,8 +224,13 @@ class WalkForwardEvaluator:
             # Train strategy
             strategy = StockTimeStrategy(symbols=list(train_data.keys()))
             
+            # Increment period counter
+            self.current_period += 1
+            
+            logging.info(f"🚀 Training Period {period_counter}/{total_periods}: {train_dates[0]} to {train_dates[-1]}")
+            
             # Train the predictor on historical data
-            self._train_predictor(strategy.predictor, train_data)
+            self._train_predictor(strategy.predictor, train_data, train_dates, test_dates)
             
             # Prepare test data
             test_data = {}
@@ -229,8 +268,17 @@ class WalkForwardEvaluator:
             out_of_sample_periods += len(test_dates)
             training_periods += len(train_dates)
             
-            logging.info(f"Completed walk-forward period: {test_dates[0]} to {test_dates[-1]}")
-            logging.info(f"Period strategy return: {sum(period_returns):.4f}, "
+            # Update metadata with performance results
+            period_num = f"period_{self.current_period:03d}"
+            if period_num in self.training_metadata:
+                self.training_metadata[period_num]["performance"] = {
+                    "strategy_return": sum(period_returns),
+                    "benchmark_return": sum(period_benchmark_returns),
+                    "excess_return": sum(period_returns) - sum(period_benchmark_returns)
+                }
+            
+            logging.info(f"✅ Period {period_counter}/{total_periods} completed: {test_dates[0]} to {test_dates[-1]}")
+            logging.info(f"   Strategy return: {sum(period_returns):.4f}, "
                         f"benchmark return: {sum(period_benchmark_returns):.4f}")
             
             # Move to next period
@@ -248,6 +296,10 @@ class WalkForwardEvaluator:
             benchmark_returns_series
         )
         
+        # Save final metadata with summary
+        if self.save_models:
+            self._save_training_metadata(strategy_returns_series, benchmark_returns_series)
+        
         return WalkForwardResult(
             strategy_metrics=strategy_metrics,
             benchmark_metrics=benchmark_metrics,
@@ -259,11 +311,15 @@ class WalkForwardEvaluator:
             training_periods=training_periods
         )
     
-    def _train_predictor(self, predictor: StockTimePredictor, train_data: Dict[str, pd.DataFrame]):
+    def _train_predictor(self, predictor: StockTimePredictor, train_data: Dict[str, pd.DataFrame], 
+                        train_dates: pd.DatetimeIndex = None, test_dates: pd.DatetimeIndex = None):
         """
-        Train the StockTime predictor on historical data
+        Train the StockTime predictor on historical data with model saving and GPU acceleration
         """
+        # Move model to GPU if available
+        predictor.to(self.device)
         predictor.train()
+        
         optimizer = torch.optim.Adam(
             [p for p in predictor.parameters() if p.requires_grad], 
             lr=1e-3
@@ -286,27 +342,167 @@ class WalkForwardEvaluator:
         if not training_samples:
             return
         
+        # Initialize model saving
+        best_loss = float('inf')
+        best_epoch = 0
+        period_num = f"period_{self.current_period:03d}"
+        
+        if self.save_models:
+            # Create directories
+            os.makedirs(f"{self.model_save_dir}/best_models", exist_ok=True)
+            os.makedirs(f"{self.model_save_dir}/checkpoints", exist_ok=True)
+            os.makedirs(f"{self.model_save_dir}/final", exist_ok=True)
+        
         # Training loop
-        for epoch in range(10):  # Limited epochs for efficiency
+        num_epochs = 10
+        for epoch in range(num_epochs):  # Limited epochs for efficiency
             total_loss = 0
             for input_seq, target_seq, timestamps in training_samples:
                 optimizer.zero_grad()
                 
-                input_tensor = torch.FloatTensor(input_seq).unsqueeze(0)
+                # Move tensors to GPU
+                input_tensor = torch.FloatTensor(input_seq).unsqueeze(0).to(self.device)
                 predictions = predictor(input_tensor, timestamps)
                 
-                # Calculate loss on overlapping patches
-                target_patches = torch.FloatTensor(target_seq[:predictions.shape[2]]).unsqueeze(0).unsqueeze(0)
+                # Calculate loss on overlapping patches (move target to GPU)
+                target_patches = torch.FloatTensor(target_seq[:predictions.shape[2]]).unsqueeze(0).unsqueeze(0).to(self.device)
                 loss = torch.nn.MSELoss()(predictions[:, -1:, :target_patches.shape[2]], target_patches)
                 
                 loss.backward()
                 optimizer.step()
                 total_loss += loss.item()
             
+            avg_loss = total_loss / len(training_samples)
+            
+            # Save model if loss improved significantly (5% improvement)
+            if self.save_models and avg_loss < best_loss * 0.95:
+                best_loss = avg_loss
+                best_epoch = epoch
+                best_model_path = f"{self.model_save_dir}/best_models/{period_num}_epoch_{epoch:02d}_loss_{avg_loss:.2f}.pth"
+                torch.save(predictor.state_dict(), best_model_path)
+                logging.info(f"💾 Saved improved model: {avg_loss:.6f} -> {best_model_path}")
+            
+            # Save checkpoint only at the end of training for this period
+            if self.save_models and epoch == (num_epochs - 1):  # Only save final checkpoint per period
+                checkpoint_path = f"{self.model_save_dir}/checkpoints/{period_num}.pth"
+                torch.save(predictor.state_dict(), checkpoint_path)
+                logging.info(f"📁 Period checkpoint saved: {checkpoint_path}")
+            
             if epoch % 3 == 0:
-                logging.info(f"Training epoch {epoch}, loss: {total_loss/len(training_samples):.6f}")
+                logging.info(f"Training epoch {epoch}, loss: {avg_loss:.6f}")
+        
+        # Save final model
+        if self.save_models:
+            final_model_path = f"{self.model_save_dir}/final/{period_num}_final.pth"
+            torch.save(predictor.state_dict(), final_model_path)
+            logging.info(f"🎯 Final model saved: {final_model_path}")
+        
+        # Store metadata for this period
+        if train_dates is not None and test_dates is not None:
+            self.training_metadata[period_num] = {
+                "train_period": {
+                    "start_date": train_dates[0].strftime('%Y-%m-%d %H:%M:%S'),
+                    "end_date": train_dates[-1].strftime('%Y-%m-%d %H:%M:%S'),
+                    "num_periods": len(train_dates),
+                    "trading_days": len(train_dates) // 13  # Assuming 13 periods per day for 30m data
+                },
+                "test_period": {
+                    "start_date": test_dates[0].strftime('%Y-%m-%d %H:%M:%S'),
+                    "end_date": test_dates[-1].strftime('%Y-%m-%d %H:%M:%S'),
+                    "num_periods": len(test_dates),
+                    "trading_days": len(test_dates) // 13
+                },
+                "model_info": {
+                    "best_model": f"best_models/{period_num}_epoch_{best_epoch:02d}_loss_{best_loss:.2f}.pth" if self.save_models else None,
+                    "final_model": f"final/{period_num}_final.pth" if self.save_models else None,
+                    "best_loss": best_loss,
+                    "best_epoch": best_epoch,
+                    "total_epochs": num_epochs
+                },
+                "training_data": {
+                    "symbols": list(train_data.keys()),
+                    "training_samples": len(training_samples),
+                    "timeframe": "30m"  # Could make this configurable
+                },
+                "timestamp": datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
+            }
         
         predictor.eval()
+    
+    def _save_training_metadata(self, strategy_returns: pd.Series, benchmark_returns: pd.Series):
+        """
+        Save comprehensive training metadata with summary statistics
+        """
+        if not self.save_models:
+            return
+        
+        # Create metadata directory
+        metadata_dir = f"{self.model_save_dir}/metadata"
+        os.makedirs(metadata_dir, exist_ok=True)
+        
+        # Calculate overall performance metrics
+        overall_strategy_metrics = self.calculate_performance_metrics(strategy_returns)
+        overall_benchmark_metrics = self.calculate_performance_metrics(benchmark_returns)
+        
+        # Create comprehensive metadata
+        metadata = {
+            "evaluation_summary": {
+                "timestamp": datetime.now().strftime('%Y-%m-%dT%H:%M:%S'),
+                "total_periods_evaluated": self.current_period,
+                "training_window": self.training_window,
+                "out_of_sample_window": self.out_of_sample_window,
+                "retraining_frequency": self.retraining_frequency
+            },
+            "overall_performance": {
+                "strategy_metrics": {
+                    "total_return": overall_strategy_metrics.total_return,
+                    "annualized_return": overall_strategy_metrics.annualized_return,
+                    "volatility": overall_strategy_metrics.volatility,
+                    "sharpe_ratio": overall_strategy_metrics.sharpe_ratio,
+                    "max_drawdown": overall_strategy_metrics.max_drawdown,
+                    "calmar_ratio": overall_strategy_metrics.calmar_ratio,
+                    "win_rate": overall_strategy_metrics.win_rate,
+                    "sortino_ratio": overall_strategy_metrics.sortino_ratio
+                },
+                "benchmark_metrics": {
+                    "total_return": overall_benchmark_metrics.total_return,
+                    "annualized_return": overall_benchmark_metrics.annualized_return,
+                    "volatility": overall_benchmark_metrics.volatility,
+                    "sharpe_ratio": overall_benchmark_metrics.sharpe_ratio,
+                    "max_drawdown": overall_benchmark_metrics.max_drawdown
+                },
+                "excess_return": overall_strategy_metrics.total_return - overall_benchmark_metrics.total_return,
+                "information_ratio": overall_strategy_metrics.information_ratio,
+                "strategy_outperformed": overall_strategy_metrics.total_return > overall_benchmark_metrics.total_return
+            },
+            "period_details": self.training_metadata,
+            "model_paths": {
+                "best_models_dir": f"{self.model_save_dir}/best_models",
+                "checkpoints_dir": f"{self.model_save_dir}/checkpoints", 
+                "final_models_dir": f"{self.model_save_dir}/final"
+            }
+        }
+        
+        # Save metadata to JSON file
+        metadata_file = f"{metadata_dir}/training_metadata_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        with open(metadata_file, 'w') as f:
+            json.dump(metadata, f, indent=2, default=str)
+        
+        # Create a latest metadata symlink/copy for easy access
+        latest_metadata_file = f"{metadata_dir}/latest_training_metadata.json"
+        with open(latest_metadata_file, 'w') as f:
+            json.dump(metadata, f, indent=2, default=str)
+        
+        logging.info(f"📊 Training metadata saved: {metadata_file}")
+        logging.info(f"🔗 Latest metadata: {latest_metadata_file}")
+        
+        # Print summary
+        print(f"\n📈 Training Metadata Summary:")
+        print(f"   Total periods evaluated: {self.current_period}")
+        print(f"   Strategy return: {overall_strategy_metrics.total_return:.2%}")
+        print(f"   Benchmark return: {overall_benchmark_metrics.total_return:.2%}")
+        print(f"   Excess return: {metadata['overall_performance']['excess_return']:.2%}")
+        print(f"   Validation: {'PASSED ✅' if metadata['overall_performance']['strategy_outperformed'] else 'FAILED ❌'}")
     
     def _simulate_trading_period(self, 
                                 strategy: StockTimeStrategy,
@@ -412,6 +608,71 @@ class WalkForwardEvaluator:
             benchmark_returns.append(daily_return)
         
         return benchmark_returns
+    
+    def load_saved_model(self, model_path: str, predictor: StockTimePredictor) -> StockTimePredictor:
+        """
+        Load a saved model state
+        
+        Args:
+            model_path: Path to the saved model (.pth file)
+            predictor: StockTimePredictor instance to load state into
+            
+        Returns:
+            Loaded predictor model
+        """
+        if not os.path.exists(model_path):
+            raise FileNotFoundError(f"Model file not found: {model_path}")
+        
+        # Load the saved state (respect current device)
+        state_dict = torch.load(model_path, map_location=self.device)
+        predictor.load_state_dict(state_dict)
+        predictor.to(self.device)
+        predictor.eval()
+        
+        logging.info(f"🔄 Model loaded from: {model_path}")
+        return predictor
+    
+    def get_saved_models_summary(self, models_dir: str = None) -> pd.DataFrame:
+        """
+        Get summary of all saved models
+        
+        Args:
+            models_dir: Directory containing saved models (default: self.model_save_dir)
+            
+        Returns:
+            DataFrame with model information
+        """
+        if models_dir is None:
+            models_dir = self.model_save_dir
+        
+        if not os.path.exists(models_dir):
+            return pd.DataFrame()
+        
+        models_info = []
+        
+        # Scan all subdirectories
+        for subdir in ['best_models', 'checkpoints', 'final']:
+            subdir_path = os.path.join(models_dir, subdir)
+            if os.path.exists(subdir_path):
+                for file in os.listdir(subdir_path):
+                    if file.endswith('.pth'):
+                        file_path = os.path.join(subdir_path, file)
+                        file_stat = os.stat(file_path)
+                        
+                        # Parse filename for information
+                        parts = file.split('_')
+                        period = parts[0] if parts else 'unknown'
+                        
+                        models_info.append({
+                            'model_type': subdir,
+                            'period': period,
+                            'filename': file,
+                            'file_path': file_path,
+                            'file_size_mb': file_stat.st_size / (1024 * 1024),
+                            'created_time': datetime.fromtimestamp(file_stat.st_ctime).strftime('%Y-%m-%d %H:%M:%S')
+                        })
+        
+        return pd.DataFrame(models_info)
     
     def generate_report(self, result: WalkForwardResult) -> str:
         """

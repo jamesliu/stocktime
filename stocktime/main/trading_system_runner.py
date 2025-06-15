@@ -499,6 +499,7 @@ def main():
     parser.add_argument('--mode', choices=['evaluate', 'live', 'both'], default='both',
                        help='Running mode: evaluate, live, or both')
     parser.add_argument('--output', type=str, default='results', help='Output directory')
+    parser.add_argument('--symbols', nargs='+', help='Override symbols from config')
     
     args = parser.parse_args()
     
@@ -507,6 +508,11 @@ def main():
     
     # Set timeframe in config
     system.config['timeframe'] = args.timeframe
+    
+    # Override symbols if provided
+    if args.symbols:
+        system.config['symbols'] = args.symbols
+        print(f"🎯 Symbols overridden to: {args.symbols}")
     
     # Load market data
     system.load_market_data(data_path=args.data, timeframe=args.timeframe)

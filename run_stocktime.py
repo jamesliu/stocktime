@@ -117,6 +117,12 @@ For more information: https://github.com/stocktime/stocktime
     parser.add_argument('--symbols', nargs='+', 
                        help='Override symbols from config')
     
+    # Real data options
+    parser.add_argument('--data', type=str,
+                       help='Path to real market data directory (e.g., ~/data/finance/schwab/ohlcv/30m/)')
+    parser.add_argument('--timeframe', choices=['30m', '1h', '1d'], default='1d',
+                       help='Data timeframe (default: 1d)')
+    
     # System options
     parser.add_argument('--check', action='store_true',
                        help='Check system health and exit')
@@ -189,6 +195,16 @@ For more information: https://github.com/stocktime/stocktime
         '--output', args.output
     ]
     
+    # Add real data arguments if provided
+    if args.data:
+        sys_args.extend(['--data', args.data])
+    if args.timeframe:
+        sys_args.extend(['--timeframe', args.timeframe])
+    
+    # Add symbols override if provided
+    if args.symbols:
+        sys_args.extend(['--symbols'] + args.symbols)
+    
     # Override sys.argv for the trading system
     original_argv = sys.argv.copy()
     sys.argv = ['trading_system_runner.py'] + sys_args
@@ -201,6 +217,9 @@ For more information: https://github.com/stocktime/stocktime
         
         if args.symbols:
             print(f"   Custom Symbols: {args.symbols}")
+        if args.data:
+            print(f"   Real Data: {args.data}")
+            print(f"   Timeframe: {args.timeframe}")
         
         print()
         

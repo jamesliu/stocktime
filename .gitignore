@@ -234,6 +234,14 @@ Thumbs.db
 *.prof
 *.profile
 
+# Generated visualizations and plots
+stocktime_performance_analysis.png
+*.png
+*.jpg
+*.jpeg
+*.svg
+*.pdf
+
 # Database files
 *.db
 *.sqlite

@@ -123,7 +123,7 @@ stocktime/
 ### Main Configuration (`config/config.yaml`)
 ```yaml
 # Trading Universe
-symbols: ['AAPL', 'MSFT', 'GOOGL', 'TSLA', 'AMZN', 'NVDA', 'META', 'BRK-B']
+symbols: ['AAPL', 'MSFT', 'GOOGL', 'TSLA', 'AMZN', 'NVDA', 'META']
 
 # Capital Management
 initial_capital: 100000

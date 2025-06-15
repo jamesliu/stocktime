@@ -212,11 +212,17 @@ class StockTimeStrategy:
     def generate_signals(self, market_data: Dict[str, pd.DataFrame]) -> List[TradingSignal]:
         """
         Generate trading signals using specialist collaboration
+        
+        NOTE: Filters out non-tradeable symbols like $VIX (used for analysis only)
         """
         signals = []
         
         for symbol in self.symbols:
             if symbol not in market_data:
+                continue
+                
+            # Filter out non-tradeable symbols (indexes like $VIX)
+            if not self._is_tradeable_symbol(symbol):
                 continue
                 
             df = market_data[symbol]
@@ -313,6 +319,37 @@ class StockTimeStrategy:
         peak = np.maximum.accumulate(cumulative_returns)
         drawdown = (cumulative_returns - peak) / (peak + 1)
         return abs(np.min(drawdown))
+    
+    def _is_tradeable_symbol(self, symbol: str) -> bool:
+        """
+        Check if a symbol is tradeable (excludes indexes like $VIX)
+        
+        Args:
+            symbol: Symbol to check
+            
+        Returns:
+            True if tradeable, False if index/non-tradeable
+        """
+        # Non-tradeable symbols (indexes and special cases)
+        non_tradeable = {
+            '$VIX',   # Volatility Index - cannot trade directly
+            '$SPX',   # S&P 500 Index - cannot trade directly  
+            '$NDX',   # NASDAQ 100 Index - cannot trade directly
+            '$RUT',   # Russell 2000 Index - cannot trade directly
+            '$DJI',   # Dow Jones Index - cannot trade directly
+        }
+        
+        # Check for index symbols (usually start with $)
+        if symbol in non_tradeable:
+            logging.info(f"🚫 Filtering non-tradeable symbol: {symbol} (index/indicator)")
+            return False
+            
+        # Additional checks for other non-tradeable patterns
+        if symbol.startswith('$'):
+            logging.info(f"🚫 Filtering potential index symbol: {symbol}")
+            return False
+            
+        return True
 
 def main():
     """

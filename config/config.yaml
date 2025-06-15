@@ -10,7 +10,6 @@ symbols:
   - 'AMZN'    # Amazon.com Inc.
   - 'NVDA'    # NVIDIA Corporation
   - 'META'    # Meta Platforms Inc.
-  - 'BRK-B'   # Berkshire Hathaway Inc.
 
 # Capital allocation
 initial_capital: 100000  # Starting capital in USD
